@@ -62,14 +62,10 @@ export const SEED_INVOICES = [
   { id: "INV-2455", client: "Varun Group", amt: 12500, status: "Pending", date: "08 May 2026", method: "Bank" },
   { id: "INV-2456", client: "Mahakumbh Motors", amt: 5000, status: "Failed", date: "09 May 2026", method: "Card", failReason: "Insufficient funds" },
 ];
-export const SEED_USERS = [
-  { id: 1, name: "Rahul Mehta", email: "rahul@medlinks.in", tenant: "MedLinks", role: "Team Lead", status: "Active", last: "2 min ago" },
-  { id: 2, name: "Priya Sharma", email: "priya@dermapuritys.com", tenant: "Derma Purtitys", role: "Telecaller", status: "Active", last: "18 min ago" },
-  { id: 3, name: "Arjun Nair", email: "arjun@varungroup.in", tenant: "Varun Group", role: "Brand CEO", status: "Active", last: "1 hr ago" },
-  { id: 4, name: "Sneha Kapoor", email: "sneha@rezoni.com", tenant: "Rezoni", role: "Admin (CMO)", status: "Suspended", last: "5 days ago" },
-  { id: 5, name: "Vikram Singh", email: "vikram@urbanauto.in", tenant: "Urban Autohub", role: "Telecaller", status: "Active", last: "40 min ago" },
-  { id: 6, name: "Anita Desai", email: "anita@aryaanya.com", tenant: "Aryaanya Group", role: "Team Lead", status: "Invited", last: "—" },
-];
+// Moved to data/users.js (28-user roster with full CRM role hierarchy, phone/team/branch/
+// reporting-line detail) — re-exported here so any pre-existing `from "./seed.js"` imports
+// of SEED_USERS keep working.
+export { SEED_USERS } from "./users.js";
 export const SEED_TICKETS = [
   { id: "TKT-812", subj: "Lead sync stopped from CarWale", tenant: "Varun Group", pri: "High", status: "Open", age: "2h", owner: "Saif Sir" },
   { id: "TKT-811", subj: "Cannot add telecaller seats", tenant: "MedLinks", pri: "Medium", status: "Open", age: "5h", owner: "Luv" },

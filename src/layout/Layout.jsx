@@ -59,7 +59,7 @@ export function Layout() {
             <Route path="/" element={<DashboardPage go={go} />} />
             <Route path="/clients" element={<ClientsPage go={go} />} />
             <Route path="/onboarding" element={<OnboardingPage />} />
-            <Route path="/users" element={<UsersPage />} />
+            <Route path="/users" element={<UsersPage key={filter ? JSON.stringify(filter) : "default"} go={go} filter={filter} openTenant={setTenantForCs} />} />
             <Route path="/subscriptions" element={<SubsPlansPage />} />
             <Route path="/customer-success" element={<CsPage openTenant={setTenantForCs} />} />
             <Route path="/leads" element={<LeadsPage go={go} />} />

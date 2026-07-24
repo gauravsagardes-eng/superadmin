@@ -379,7 +379,9 @@ export function SelectAllHeader({ sel }) {
 }
 
 // Dropdown shown in place of the page's primary "Add" action once rows are selected.
-export function BulkActionsMenu({ count, onAction }) {
+// `extra` appends page-specific bulk actions (e.g. Suspend/Reactivate/Export on UsersPage)
+// below a divider, after the two built-in channels — optional, existing callers unaffected.
+export function BulkActionsMenu({ count, onAction, extra }) {
   const [open, setOpen] = useState(false);
   return (
     <div className="relative">
@@ -391,6 +393,16 @@ export function BulkActionsMenu({ count, onAction }) {
         <div className="absolute right-0 top-11 z-30 w-52 rounded-xl border bg-[var(--t-surface)] shadow-xl py-1" style={{ borderColor: T.border }} onMouseDown={(e) => e.stopPropagation()}>
           <button onMouseDown={() => { onAction("whatsapp"); setOpen(false); }} className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-left hover:bg-[var(--t-subtle)]" style={{ color: T.text }}><MessageSquare size={14} /> Bulk WhatsApp</button>
           <button onMouseDown={() => { onAction("email"); setOpen(false); }} className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-left hover:bg-[var(--t-subtle)]" style={{ color: T.text }}><Mail size={14} /> Bulk Email</button>
+          {extra && extra.length > 0 && (
+            <>
+              <div className="my-1 border-t" style={{ borderColor: T.border }} />
+              {extra.map((it, i) => (
+                <button key={i} onMouseDown={() => { onAction(it.action); setOpen(false); }} className="w-full flex items-center gap-2.5 px-4 py-2 text-[13px] text-left hover:bg-[var(--t-subtle)]" style={{ color: it.danger ? T.danger : T.text }}>
+                  {it.icon && <it.icon size={14} />} {it.label}
+                </button>
+              ))}
+            </>
+          )}
         </div>
       )}
     </div>

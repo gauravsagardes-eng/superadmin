@@ -2,7 +2,7 @@ import { useState, useContext, createContext, useCallback } from "react";
 import { NOW, ADMIN, mkChecklist } from "../data/constants.js";
 import { TODAY, fmtTaskDate } from "../lib/format.js";
 import {
-  SEED_CLIENTS, SEED_INVOICES, SEED_USERS, SEED_TICKETS, SEED_ONBOARDING,
+  SEED_CLIENTS, SEED_INVOICES, SEED_TICKETS, SEED_ONBOARDING,
   loadOnboarding, saveOnboarding, SEED_NOTIFS, makePlanId, SEED_SP_PLANS,
   SEED_ADDON_PRICING, SEED_SUBSCRIPTIONS, SEED_HISTORY, SEED_PLAYBOOKS,
   SEED_TENANT_TASKS, SEED_CONTACT_LOGS,
@@ -13,6 +13,7 @@ import {
   emptyPermissions, genApiKeyValue, genKeyId, genWebhookKeyId, genWebhookSecret,
 } from "../data/security.js";
 import { SEED_INDUSTRIES } from "../data/industries.js";
+import { SEED_USERS } from "../data/users.js";
 
 export const buildTasksFromPlaybook = (tenant, playbook) => playbook.steps.map((step) => {
   const due = new Date(TODAY);
@@ -110,9 +111,49 @@ export function StoreProvider({ children }) {
       return client;
     },
     retryInvoice: (invId) => { setInvoices((iv) => iv.map((i) => (i.id === invId ? { ...i, status: "Paid" } : i))); notify(`${invId} retried — payment collected`); },
-    setUserStatus: (id, status) => { setUsers((us) => us.map((u) => (u.id === id ? { ...u, status } : u))); notify(`User ${status.toLowerCase()}`); },
-    resendInvite: () => notify("Invite re-sent"),
-    resetPassword: (name) => notify(`Password reset link sent to ${name}`),
+    setUserStatus: (id, status) => {
+      let prevStatus = "";
+      setUsers((us) => us.map((u) => { if (u.id !== id) return u; prevStatus = u.status; return { ...u, status }; }));
+      addHistory({ entityType: "CRMUser", entityId: id, action: "User status changed", prev: { status: prevStatus }, next: { status }, reason: `Manually set to ${status}` });
+      notify(`User ${status.toLowerCase()}`);
+    },
+    resendInvite: (id) => {
+      const u = users.find((x) => x.id === id);
+      addHistory({ entityType: "CRMUser", entityId: id, action: "Invite resent", prev: {}, next: {}, reason: "Manual resend" });
+      notify(`Invite re-sent to ${u ? u.name : "user"}`);
+    },
+    resetPassword: (id) => {
+      const u = users.find((x) => x.id === id);
+      addHistory({ entityType: "CRMUser", entityId: id, action: "Password reset requested", prev: {}, next: {}, reason: "Manual reset" });
+      notify(`Password reset link sent to ${u ? u.name : "user"}`);
+    },
+    createUser: (data) => {
+      const user = { ...data, id: nextId(), status: "Invited", createdDate: NOW, createdBy: ADMIN, lastLogin: null, lastActive: "—", loginCount30d: 0, leadsAssigned: 0, leadsConverted30d: 0, mfaEnabled: false, sessionsActive: 0 };
+      setUsers((prev) => [...prev, user]);
+      addHistory({ entityType: "CRMUser", entityId: user.id, action: "User created", prev: {}, next: { name: user.name, tenant: user.tenant, role: user.role }, reason: "New user invited" });
+      notify(`User "${user.name}" invited`);
+      return user;
+    },
+    updateUser: (id, updates, reason = "Updated") => {
+      let prev = {};
+      setUsers((us) => us.map((u) => {
+        if (u.id !== id) return u;
+        prev = { name: u.name, phone: u.phone, role: u.role, team: u.team, branch: u.branch, brand: u.brand, reportsTo: u.reportsTo };
+        return { ...u, ...updates };
+      }));
+      addHistory({ entityType: "CRMUser", entityId: id, action: "User updated", prev, next: updates, reason });
+      notify("User updated");
+    },
+    bulkSuspend: (ids) => {
+      setUsers((us) => us.map((u) => (ids.includes(u.id) ? { ...u, status: "Suspended" } : u)));
+      addHistory({ entityType: "CRMUser", entityId: ids.join(","), action: `Bulk suspended ${ids.length} user(s)`, prev: {}, next: { status: "Suspended" }, reason: "Bulk action" });
+      notify(`${ids.length} user(s) suspended`);
+    },
+    bulkReactivate: (ids) => {
+      setUsers((us) => us.map((u) => (ids.includes(u.id) ? { ...u, status: "Active" } : u)));
+      addHistory({ entityType: "CRMUser", entityId: ids.join(","), action: `Bulk reactivated ${ids.length} user(s)`, prev: {}, next: { status: "Active" }, reason: "Bulk action" });
+      notify(`${ids.length} user(s) reactivated`);
+    },
     impersonate: (u) => { setImpersonating(u); notify(`Now viewing as ${u.name || u}`); },
     stopImpersonate: () => setImpersonating(null),
     updateOnboardingStage: (id, newStage) => {

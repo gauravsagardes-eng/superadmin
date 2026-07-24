@@ -22,6 +22,7 @@ import {
 import { loadAutomationLogs, SEED_AUTOMATION_LOGS, OPS_TRIGGER_LABEL, opsStatusTone } from "./AutomationPage.jsx";
 import { LOGS_NOW } from "../data/logs.js";
 import { computeTenantCrmSnapshot, fmtTenantCrmWhen, TENANT_CRM_TRIGGER_LABEL } from "../data/tenantCrmAutomations.js";
+import { CRM_ROLE_TONE, fmtUserLastLogin } from "../data/users.js";
 
 /* ============================================================
    CRM AUTOMATIONS (per-tenant, last 7d) — the tenant's own lead-routing/
@@ -251,23 +252,28 @@ export function Tenant360({ tenant, onClose, starred, onToggleStar, go }) {
         )}
         {tab === "Users" && (
           <Card>
-            <CardHeader title={`Users (${tenantUsers.length})`} action={<Button size="sm" variant="primary" onClick={() => store.notify(`Invite sent for ${c.name}`)}><UserPlus size={13} /> Invite</Button>} />
-            <Table head={["User", "Role", "Status", ""]}>
+            <CardHeader title={`Users (${tenantUsers.length})`} action={<Button size="sm" onClick={() => go && go("users", { tenant: c.name })}>View all users <ArrowRight size={13} /></Button>} />
+            <Table head={["User", "Role", "Team / Branch", "Last Login", "Status", ""]}>
               {tenantUsers.length ? tenantUsers.map((u) => (
                 <tr key={u.id} className="hover:bg-[#F8F9FC]">
                   <Td><NameCell name={u.name} sub={u.email} /></Td>
-                  <Td><Badge tone={u.role.includes("CMO") || u.role.includes("CEO") ? "brand" : "gray"}>{u.role}</Badge></Td>
+                  <Td><Badge tone={CRM_ROLE_TONE[u.role] || "gray"}>{u.role}</Badge></Td>
+                  <Td className="text-xs" style={{ color: T.text2 }}>{u.team || "—"}<div style={{ color: T.text3 }}>{u.branch}</div></Td>
+                  <Td className="text-xs" style={{ color: T.text2 }}>{fmtUserLastLogin(u.lastLogin)}</Td>
                   <Td>{statusBadge(u.status)}</Td>
-                  <Td><Menu items={[
-                    { label: "Impersonate", icon: LogIn, onClick: () => store.impersonate(u) },
-                    { label: "Reset password", icon: Key, onClick: () => store.resetPassword(u.name) },
-                    { divider: true },
-                    u.status === "Suspended"
-                      ? { label: "Reactivate", icon: Power, onClick: () => store.setUserStatus(u.id, "Active") }
-                      : { label: "Suspend", icon: Ban, danger: true, onClick: () => store.setUserStatus(u.id, "Suspended") },
-                  ]} /></Td>
+                  <Td><div className="flex items-center gap-1">
+                    <button onClick={() => go && go("users", { tenant: c.name })} className="p-1 rounded hover:bg-[var(--t-hover)]" title="View in Users"><ExternalLink size={14} style={{ color: T.text3 }} /></button>
+                    <Menu items={[
+                      { label: "Impersonate", icon: LogIn, onClick: () => store.impersonate(u) },
+                      { label: "Reset password", icon: Key, onClick: () => store.resetPassword(u.id) },
+                      { divider: true },
+                      u.status === "Suspended"
+                        ? { label: "Reactivate", icon: Power, onClick: () => store.setUserStatus(u.id, "Active") }
+                        : { label: "Suspend", icon: Ban, danger: true, onClick: () => store.setUserStatus(u.id, "Suspended") },
+                    ]} />
+                  </div></Td>
                 </tr>
-              )) : <tr><Td colSpan={4} className="text-center py-8" style={{ color: T.text3 }}>No users seeded for this tenant</Td></tr>}
+              )) : <tr><Td colSpan={6} className="text-center py-8" style={{ color: T.text3 }}>No users seeded for this tenant</Td></tr>}
             </Table>
           </Card>
         )}
